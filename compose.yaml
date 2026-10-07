@@ -1,0 +1,50 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram-bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: 
+      BOT_NAME: TelegramBot
+      ADMIN_IDS: 
+      TELEGRAM_API_MODE: local
+      TELEGRAM_API_BASE_URL: http://telegram-bot-api:8081
+      LOCAL_BOT_API_DATA_DIR: /var/lib/telegram-bot-api
+      MAX_INPUT_MB: 50
+      MAX_OUTPUT_MB: 50
+      MAX_CONCURRENT_JOBS: 2
+      MAX_USER_CONCURRENT_JOBS: 1
+      MAX_GLOBAL_CONCURRENT_JOBS: 10
+      RATE_LIMIT_UPLOADS_PER_MINUTE: 10
+      JOB_TTL_MINUTES: 30
+      BACKUP_RETENTION_DAYS: 7
+      DATA_DIR: /data
+      TEMP_DIR: /tmp/bot-app
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data:/data
+      - telegram-bot-api-data:/var/lib/telegram-bot-api:ro
+    tmpfs:
+      - /tmp/bot-app:rw,mode=1777,size=1G
+    networks:
+      - default
+      - telegram-bots
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  default:
+  telegram-bots:
+    external: true
+
+volumes:
+  telegram-bot-api-data:
+    external: true
+    name: telegram-bot-api-data
