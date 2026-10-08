@@ -68,26 +68,17 @@ def format_conversion_caption(
     width: int,
     height: int,
     out_size_bytes: int,
-    in_size_bytes: int,
+    in_size_bytes: int = 0,
 ) -> str:
     """
-    Formats the output caption:
-    ✅ Converted to WEBP • 1920×1080 • 420 KB (saved 82%)
-    or
-    ✅ Converted to PNG • 1920×1080 • 2.8 MB (+400 KB)
+    Formats the output caption simply and cleanly:
+    ✅ WEBP • 1920×1080 • 420 KB
     """
     fmt_upper = target_format.upper()
     size_str = format_file_size(out_size_bytes)
-    res_str = f"{width}×{height}"
-
-    if out_size_bytes < in_size_bytes and in_size_bytes > 0:
-        saved_pct = round((1 - (out_size_bytes / in_size_bytes)) * 100)
-        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str} (saved {saved_pct}%)"
-    elif out_size_bytes > in_size_bytes and in_size_bytes > 0:
-        diff_str = format_file_size(out_size_bytes - in_size_bytes)
-        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str} (+{diff_str})"
-    else:
-        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str}"
+    if width > 0 and height > 0:
+        return f"✅ {fmt_upper} • {width}×{height} • {size_str}"
+    return f"✅ {fmt_upper} • {size_str}"
 
 
 def sanitize_filename(filename: str, fallback: str = "image.png") -> str:

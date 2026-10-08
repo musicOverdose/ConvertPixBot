@@ -366,12 +366,14 @@ async def test_conversion_worker_execution_and_delivery(
         # Verify preview was sent with caption
         mock_bot.send_photo.assert_called_once()
         photo_kwargs = mock_bot.send_photo.call_args[1]
-        assert "Converted to WEBP" in photo_kwargs["caption"]
+        assert "WEBP" in photo_kwargs["caption"]
+        assert "✅" in photo_kwargs["caption"]
 
         # Verify document was sent with disable_content_type_detection
         mock_bot.send_document.assert_called_once()
         doc_kwargs = mock_bot.send_document.call_args[1]
-        assert "Converted to WEBP" in doc_kwargs["caption"]
+        assert "WEBP" in doc_kwargs["caption"]
+        assert "✅" in doc_kwargs["caption"]
         assert doc_kwargs["document"].filename == "my_photo.webp"
         assert doc_kwargs.get("disable_content_type_detection") is True
 
@@ -432,7 +434,8 @@ async def test_pdf_conversion_delivery_has_no_preview_photo(
         mock_bot.send_document.assert_called_once()
         doc_kwargs = mock_bot.send_document.call_args[1]
         assert doc_kwargs["document"].filename == "image.pdf"
-        assert "Converted to PDF" in doc_kwargs["caption"]
+        assert "PDF" in doc_kwargs["caption"]
+        assert "✅" in doc_kwargs["caption"]
 
     finally:
         await queue_mgr.stop()
