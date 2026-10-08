@@ -37,7 +37,7 @@ Built with Python 3.13, aiogram 3, Pillow, and `pillow-heif`, integrated with lo
 1. Open **Portainer** on your server.
 2. Go to **Stacks** → **Add stack**.
 3. Select **Repository**:
-   - **Repository URL**: `https://github.com/musicOverdose/convert-pix-bot`
+   - **Repository URL**: `https://github.com/musicOverdose/ConvertPixBot`
    - **Repository reference**: `refs/heads/main`
    - **Compose path**: `compose.yaml` (or `docker-compose.yml`)
 4. Add **Environment Variables**:
@@ -57,8 +57,8 @@ Built with Python 3.13, aiogram 3, Pillow, and `pillow-heif`, integrated with lo
 ## Deploying via Docker Compose (CLI)
 
 ```bash
-git clone https://github.com/musicOverdose/convert-pix-bot.git
-cd convert-pix-bot
+git clone https://github.com/musicOverdose/ConvertPixBot.git
+cd ConvertPixBot
 
 # Configure environment
 cp .env.example .env
