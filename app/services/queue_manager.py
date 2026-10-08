@@ -1,4 +1,4 @@
-"""Asynchronous worker queue for CPU/IO heavy audio tasks."""
+"""Asynchronous worker queue for CPU/IO heavy media processing tasks."""
 
 import asyncio
 from dataclasses import dataclass, field

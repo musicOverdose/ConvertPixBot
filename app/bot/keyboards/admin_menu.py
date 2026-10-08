@@ -186,8 +186,8 @@ def get_admin_settings_keyboard(settings: Settings, api_mode_manager: Optional[A
     mode_btn_text = "☁️ Configure Cloud Mode" if is_local else "🖥️ Configure Local Mode"
     target_mode = "cloud" if is_local else "local"
 
-    tech_icon = "🟢" if settings.show_technical_info else "🔴"
-    cover_icon = "🟢" if settings.send_cover_separately else "🔴"
+    tech_icon = "🟢" if getattr(settings, "show_technical_info", True) else "🔴"
+    cover_icon = "🟢" if getattr(settings, "send_cover_separately", True) else "🔴"
 
     row1 = [InlineKeyboardButton(text=mode_btn_text, callback_data=f"adm_set_mode:{target_mode}")]
     if is_local:
@@ -200,8 +200,8 @@ def get_admin_settings_keyboard(settings: Settings, api_mode_manager: Optional[A
             InlineKeyboardButton(text=f"📤 Out: {settings.max_output_mb}MB", callback_data="adm_set_output_mb"),
         ],
         [
-            InlineKeyboardButton(text=f"{tech_icon} Technical Specs", callback_data="adm_set_toggle:tech"),
-            InlineKeyboardButton(text=f"{cover_icon} Separate Cover", callback_data="adm_set_toggle:cover"),
+            InlineKeyboardButton(text=f"{tech_icon} Image Details", callback_data="adm_set_toggle:tech"),
+            InlineKeyboardButton(text=f"{cover_icon} Preview Photo", callback_data="adm_set_toggle:cover"),
         ],
         [
             InlineKeyboardButton(text="🔄 Reset to .env Defaults", callback_data="adm_set_reset"),

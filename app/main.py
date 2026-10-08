@@ -65,6 +65,16 @@ async def main():
     await db.connect()
     repository = DatabaseRepository(db)
 
+    # Load persisted system settings from database
+    for key in ("max_input_mb", "max_output_mb"):
+        val = await repository.get_system_setting(key, "")
+        if val and val.isdigit():
+            setattr(settings, key, int(val))
+    for key in ("show_technical_info", "send_cover_separately"):
+        val = await repository.get_system_setting(key, "")
+        if val != "":
+            setattr(settings, key, val in ("1", "true", "True"))
+
     job_manager = JobManager(
         base_jobs_dir=settings.jobs_dir,
         ttl_minutes=settings.job_ttl_minutes,

@@ -1,5 +1,5 @@
 """
-Message customization service for SongTaggerBot.
+Message customization service for ConvertPixBot.
 
 Supports customizable /start (welcome), must-join, and /help messages.
 Persists custom templates in SQLite database (system_settings table).
@@ -29,7 +29,7 @@ ALLOWED_PLACEHOLDERS = {"first_name", "username", "user_id", "bot_name"}
 DEFAULT_WELCOME_MESSAGE = "Welcome {first_name}! Send an image or static sticker to convert its format."
 DEFAULT_MUST_JOIN_MESSAGE = (
     "👋 Hello <b>{first_name}</b>!\n\n"
-    "Please join our channel(s) below to use <b>SongTaggerBot</b>.\n"
+    "Please join our channel(s) below to use <b>{bot_name}</b>.\n"
     "After joining, tap <b>🔄 I've joined</b> to start using the bot!"
 )
 DEFAULT_HELP_MESSAGE = "Send an image (PNG, JPG, WEBP, BMP, ICO, HEIC, AVIF, PSD) or a static Telegram sticker to convert it to another format."
@@ -121,7 +121,7 @@ class MessageService:
     def render_template(
         template: str,
         user: Optional[User] = None,
-        bot_name: str = "SongTaggerBot",
+        bot_name: str = "ConvertPixBot",
     ) -> str:
         """
         Safely substitutes placeholders {first_name}, {username}, {user_id}, {bot_name}.
@@ -170,7 +170,7 @@ class MessageService:
     async def get_welcome_message(
         self,
         user: Optional[User] = None,
-        bot_name: str = "SongTaggerBot",
+        bot_name: str = "ConvertPixBot",
     ) -> str:
         """Returns the rendered welcome message for /start."""
         template, _ = await self.get_raw_message("welcome")
@@ -179,7 +179,7 @@ class MessageService:
     async def get_must_join_message(
         self,
         user: Optional[User] = None,
-        bot_name: str = "SongTaggerBot",
+        bot_name: str = "ConvertPixBot",
     ) -> str:
         """Returns the rendered must-join channel prompt message."""
         template, _ = await self.get_raw_message("must_join")
@@ -188,7 +188,7 @@ class MessageService:
     async def get_help_message(
         self,
         user: Optional[User] = None,
-        bot_name: str = "SongTaggerBot",
+        bot_name: str = "ConvertPixBot",
     ) -> str:
         """Returns the rendered help message for /help."""
         template, _ = await self.get_raw_message("help")

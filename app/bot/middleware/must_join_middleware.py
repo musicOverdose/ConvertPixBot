@@ -10,7 +10,7 @@ from app.services.must_join_service import MustJoinService
 
 
 class MustJoinMiddleware(BaseMiddleware):
-    """Enforces must-join requirements before allowing audio processing."""
+    """Enforces must-join requirements before allowing media processing."""
 
     def __init__(
         self,

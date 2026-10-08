@@ -52,7 +52,7 @@ async def test_cmd_admin_dashboard(fsm_context):
 
     await cmd_admin(msg, fsm_context, settings)
     msg.answer.assert_called_once()
-    assert "SongTaggerBot Admin Dashboard" in msg.answer.call_args[0][0]
+    assert f"{settings.bot_name} Admin Dashboard" in msg.answer.call_args[0][0]
 
     # Non-admin execution
     msg_unauthorized = MagicMock()
@@ -229,5 +229,162 @@ async def test_admin_channels_management_and_sync(test_repo: DatabaseRepository)
     cb.answer.assert_called()
     channels = await test_repo.list_channels()
     assert channels[0].title == "Updated Title"
+
+
+@pytest.mark.asyncio
+async def test_admin_settings_menu_and_toggles(test_repo: DatabaseRepository):
+    from app.bot.handlers.admin_handlers import (
+        render_admin_settings,
+        callback_adm_settings,
+        callback_adm_set_toggle,
+        callback_adm_set_size_preset,
+    )
+
+    settings = Settings(bot_token="test", admin_ids=[1001])
+
+    # 1. Test render_admin_settings directly - must NOT raise AttributeError
+    text, kb = render_admin_settings(settings)
+    assert "Bot Configuration & API Settings" in text
+    assert "Image Inspection Details" in text
+    assert "Preview Photo Delivery" in text
+    assert kb is not None
+
+    # 2. Test callback_adm_settings
+    cb = MagicMock()
+    cb.from_user.id = 1001
+    cb.data = "adm_settings"
+    cb.message = MagicMock()
+    cb.message.edit_text = AsyncMock()
+    cb.answer = AsyncMock()
+
+    await callback_adm_settings(cb, settings)
+    cb.message.edit_text.assert_called_once()
+    assert "Bot Configuration & API Settings" in cb.message.edit_text.call_args[0][0]
+
+    # 3. Test toggling tech info (Image Inspection Details)
+    cb.reset_mock()
+    cb.data = "adm_set_toggle:tech"
+    initial_tech = getattr(settings, "show_technical_info", True)
+
+    await callback_adm_set_toggle(cb, settings, test_repo)
+    assert settings.show_technical_info == (not initial_tech)
+    saved_tech = await test_repo.get_system_setting("show_technical_info")
+    assert saved_tech == ("1" if settings.show_technical_info else "0")
+
+    # 4. Test toggling cover (Preview Photo Delivery)
+    cb.reset_mock()
+    cb.data = "adm_set_toggle:cover"
+    initial_cover = getattr(settings, "send_cover_separately", True)
+
+    await callback_adm_set_toggle(cb, settings, test_repo)
+    assert settings.send_cover_separately == (not initial_cover)
+    saved_cover = await test_repo.get_system_setting("send_cover_separately")
+    assert saved_cover == ("1" if settings.send_cover_separately else "0")
+
+    # 5. Test size preset
+    cb.reset_mock()
+    cb.data = "adm_set_size:input:50"
+    await callback_adm_set_size_preset(cb, settings, test_repo)
+    assert settings.max_input_mb == 50
+    assert await test_repo.get_system_setting("max_input_mb") == "50"
+
+
+@pytest.mark.asyncio
+async def test_admin_stats_callback_and_gc_ops(test_repo: DatabaseRepository, tmp_path):
+    from app.services.job_manager import JobManager
+    from app.bot.handlers.admin_handlers import (
+        callback_adm_stats,
+        callback_adm_cleanup,
+        callback_adm_backup,
+        callback_adm_maint_toggle,
+        callback_adm_audit,
+    )
+
+    settings = Settings(
+        bot_token="test",
+        admin_ids=[1001],
+        jobs_dir=tmp_path / "jobs",
+        backups_dir=tmp_path / "backups",
+    )
+    job_mgr = JobManager(base_jobs_dir=settings.jobs_dir)
+
+    cb = MagicMock()
+    cb.from_user.id = 1001
+    cb.message = MagicMock()
+    cb.message.edit_text = AsyncMock()
+    cb.answer = AsyncMock()
+
+    # 1. Stats callback
+    cb.data = "adm_stats"
+    await callback_adm_stats(cb, settings, test_repo)
+    cb.message.edit_text.assert_called_once()
+    assert f"{settings.bot_name} Operational Statistics" in cb.message.edit_text.call_args[0][0]
+
+    # 2. Cleanup GC callback
+    cb.reset_mock()
+    cb.data = "adm_cleanup"
+    await callback_adm_cleanup(cb, settings, job_mgr, test_repo)
+    cb.message.edit_text.assert_called_once()
+    assert "Garbage Collection Complete" in cb.message.edit_text.call_args[0][0]
+
+    # 3. Backup callback
+    cb.reset_mock()
+    cb.data = "adm_backup"
+    await callback_adm_backup(cb, settings, test_repo)
+    cb.message.edit_text.assert_called_once()
+    assert "Database Online Backup Complete" in cb.message.edit_text.call_args[0][0]
+
+    # 4. Maintenance toggle callback
+    cb.reset_mock()
+    cb.data = "adm_maint_toggle"
+    await callback_adm_maint_toggle(cb, settings, test_repo, job_mgr)
+    assert await test_repo.is_maintenance_mode() is True
+    assert job_mgr.is_maintenance_mode is True
+
+    # 5. Audit logs callback
+    cb.reset_mock()
+    cb.data = "adm_audit:0"
+    await callback_adm_audit(cb, settings, test_repo)
+    cb.message.edit_text.assert_called_once()
+    assert "Admin Audit Trail" in cb.message.edit_text.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_admin_messages_menu(test_repo: DatabaseRepository):
+    from app.services.message_service import MessageService
+    from app.bot.handlers.admin_handlers import (
+        callback_adm_messages,
+        callback_adm_msg_view,
+        callback_adm_msg_reset,
+    )
+
+    settings = Settings(bot_token="test", admin_ids=[1001])
+    msg_service = MessageService(test_repo)
+
+    cb = MagicMock()
+    cb.from_user.id = 1001
+    cb.message = MagicMock()
+    cb.message.edit_text = AsyncMock()
+    cb.answer = AsyncMock()
+
+    # 1. Messages menu
+    cb.data = "adm_messages"
+    await callback_adm_messages(cb, settings, test_repo, msg_service)
+    cb.message.edit_text.assert_called_once()
+    assert "Customizable Messages" in cb.message.edit_text.call_args[0][0]
+
+    # 2. View message detail
+    cb.reset_mock()
+    cb.data = "adm_msg_view:welcome"
+    await callback_adm_msg_view(cb, settings, test_repo, msg_service)
+    cb.message.edit_text.assert_called_once()
+    assert "Welcome Message" in cb.message.edit_text.call_args[0][0]
+
+    # 3. Reset message
+    cb.reset_mock()
+    cb.data = "adm_msg_reset:welcome"
+    await callback_adm_msg_reset(cb, settings, test_repo, msg_service)
+    cb.answer.assert_called_once()
+
 
 

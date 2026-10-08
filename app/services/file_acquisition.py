@@ -5,7 +5,7 @@ Security and Architecture:
 - In Cloud mode, files are downloaded over standard HTTP via bot.download_file().
 - In Local mode (--local), Telegram Local Bot API returns an absolute filesystem path
   pointing inside its storage directory (by default /var/lib/telegram-bot-api).
-- Because SongTaggerBot shares the storage volume read-only (:ro), files are copied
+- Because ConvertPixBot shares the storage volume read-only (:ro), files are copied
   directly from disk with zero network bandwidth overhead.
 - Security Boundary: Every path returned in Local mode is strictly resolved and verified
   to ensure it resides within the allowed root directory. Any path traversal attempt or

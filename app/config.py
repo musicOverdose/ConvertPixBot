@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Telegram Bot Token & Identity
     bot_token: str = Field(default='', description='Telegram Bot API Token')
-    bot_name: str = Field(default='MyTelegramBot', description='Display name of the bot')
+    bot_name: str = Field(default='Convert Pix Bot', description='Display name of the bot')
 
     # Administrators (list of integer Telegram IDs)
     admin_ids: list[int] = Field(default_factory=list, description='Admin Telegram IDs')
@@ -77,6 +77,16 @@ class Settings(BaseSettings):
     local_bot_api_data_dir: Path = Field(
         default=Path('/var/lib/telegram-bot-api'),
         description='Path to mounted Local Bot API storage directory',
+    )
+
+    # UI and delivery flags
+    show_technical_info: bool = Field(
+        default=True,
+        description='Show image inspection details in metadata message',
+    )
+    send_cover_separately: bool = Field(
+        default=True,
+        description='Send visual preview photo for image formats',
     )
 
     @property

@@ -265,8 +265,8 @@ class ApiModeManager:
             self.settings.telegram_api_base_url = candidate_settings.telegram_api_base_url
             self.settings.max_input_mb = candidate_settings.max_input_mb
             self.settings.max_output_mb = candidate_settings.max_output_mb
-            self.settings.show_technical_info = candidate_settings.show_technical_info
-            self.settings.send_cover_separately = candidate_settings.send_cover_separately
+            self.settings.show_technical_info = getattr(candidate_settings, "show_technical_info", True)
+            self.settings.send_cover_separately = getattr(candidate_settings, "send_cover_separately", True)
 
             try:
                 from app.config import reload_settings

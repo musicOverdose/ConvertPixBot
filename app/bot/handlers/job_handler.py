@@ -287,7 +287,7 @@ async def callback_convert_format(
             )
 
             # 5. Deliver result: Visual Preview with caption for image formats (convenience only, skipped for PDF)
-            if has_preview and target_fmt.lower() != 'pdf':
+            if has_preview and target_fmt.lower() != 'pdf' and getattr(settings, 'send_cover_separately', True):
                 try:
                     preview_file = FSInputFile(path=str(preview_path), filename='preview.jpg')
                     await bot.send_photo(chat_id=chat_id, photo=preview_file, caption=caption)

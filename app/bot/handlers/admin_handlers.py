@@ -73,7 +73,7 @@ async def render_admin_dashboard(
     api_mode_badge = "🖥️ <b>Local Server</b>" if settings.is_local_mode else "☁️ <b>Cloud Mode</b>"
 
     text = (
-        "🎛 <b>SongTaggerBot Admin Dashboard</b>\n\n"
+        f"🎛 <b>{settings.bot_name} Admin Dashboard</b>\n\n"
         f"• Status: {maint_status} | Uptime: <code>{uptime_str}</code>\n"
         f"• API Mode: {api_mode_badge} (<code>{settings.effective_api_base_url}</code>)\n"
         f"• Active Users: <b>{stats.unique_users}</b>\n"
@@ -97,8 +97,8 @@ def render_admin_settings(
     configured_endpoint = api_mode_manager.get_configured_endpoint() if api_mode_manager else settings.effective_api_base_url
 
     running_badge = "🖥️ <b>Local Server (Centralized)</b>" if running_mode == "local" else "☁️ <b>Cloud (api.telegram.org)</b>"
-    tech_badge = "🟢 Enabled" if settings.show_technical_info else "🔴 Disabled"
-    cover_badge = "🟢 Enabled" if settings.send_cover_separately else "🔴 Disabled"
+    tech_badge = "🟢 Enabled" if getattr(settings, "show_technical_info", True) else "🔴 Disabled"
+    cover_badge = "🟢 Enabled" if getattr(settings, "send_cover_separately", True) else "🔴 Disabled"
 
     notice_section = ""
     if api_mode_manager and api_mode_manager.is_migration_required():
@@ -128,8 +128,8 @@ def render_admin_settings(
         f"• <b>Max File Output:</b> <b>{settings.max_output_mb} MB</b>\n"
         f"• <b>Rate Limit:</b> <b>{settings.rate_limit_uploads_per_minute} uploads/min</b>\n"
         f"• <b>Concurrency:</b> <b>{settings.max_user_concurrent_jobs}/user</b> | <b>{settings.max_global_concurrent_jobs} global</b>\n"
-        f"• <b>Technical Specs in Preview:</b> {tech_badge}\n"
-        f"• <b>Send Cover Separately:</b> {cover_badge}"
+        f"• <b>Image Inspection Details:</b> {tech_badge}\n"
+        f"• <b>Preview Photo Delivery:</b> {cover_badge}"
         f"{notice_section}\n\n"
         "<i>Use buttons below to configure API modes, update limits, or toggle UX options.</i>"
     )
@@ -222,14 +222,11 @@ async def cmd_stats(message: Message, settings: Settings, repository: DatabaseRe
         return
     stats = await repository.get_stats()
     text = (
-        "📊 <b>SongTaggerBot Operational Statistics</b>\n\n"
+        f"📊 <b>{settings.bot_name} Operational Statistics</b>\n\n"
         f"• Uptime: <code>{get_uptime_formatted()}</code>\n"
         f"• Files Received: <b>{stats.files_received}</b>\n"
         f"• Files Processed: <b>{stats.files_processed}</b>\n"
         f"• Files Failed: <b>{stats.files_failed}</b>\n"
-        f"• Cuts Performed: <b>{stats.cuts_performed}</b>\n"
-        f"• Covers Updated: <b>{stats.covers_updated}</b>\n"
-        f"• Lyrics Updated: <b>{stats.lyrics_updated}</b>\n"
         f"• Active Users: <b>{stats.unique_users}</b>\n"
         f"• Total Data Processed: <b>{stats.total_processed_mb} MB</b>"
     )
@@ -243,14 +240,11 @@ async def callback_adm_stats(callback: CallbackQuery, settings: Settings, reposi
         return
     stats = await repository.get_stats()
     text = (
-        "📊 <b>SongTaggerBot Operational Statistics</b>\n\n"
+        f"📊 <b>{settings.bot_name} Operational Statistics</b>\n\n"
         f"• Uptime: <code>{get_uptime_formatted()}</code>\n"
         f"• Files Received: <b>{stats.files_received}</b>\n"
         f"• Files Processed: <b>{stats.files_processed}</b>\n"
         f"• Files Failed: <b>{stats.files_failed}</b>\n"
-        f"• Cuts Performed: <b>{stats.cuts_performed}</b>\n"
-        f"• Covers Updated: <b>{stats.covers_updated}</b>\n"
-        f"• Lyrics Updated: <b>{stats.lyrics_updated}</b>\n"
         f"• Active Users: <b>{stats.unique_users}</b>\n"
         f"• Total Data Processed: <b>{stats.total_processed_mb} MB</b>"
     )
@@ -410,24 +404,6 @@ async def callback_adm_audit(
     if callback.message:
         await callback.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
     await callback.answer()
-
-
-# --- Must-Join Channels Management ---
-
-@router.message(Command("channels"))
-async def cmd_channels(message: Message, settings: Settings, repository: DatabaseRepository) -> None:
-    if not is_admin_check(message, settings):
-        return
-    channels = await repository.list_channels()
-    if not channels:
-        await message.answer("📢 No required channels configured.")
-        return
-    lines = ["📢 <b>Required Channels:</b>\n"]
-    for c in channels:
-        status_emoji = "🟢 Enabled" if c.is_enabled else "🔴 Disabled"
-        display = c.username or c.channel_id
-        lines.append(f"• <b>{display}</b> ({status_emoji}) - ID: <code>{c.channel_id}</code>")
-    await message.answer("\n".join(lines), parse_mode="HTML")
 
 
 # --- Required Broadcast Channels Management ---
@@ -646,7 +622,7 @@ async def callback_adm_ch_add(callback: CallbackQuery, state: FSMContext, settin
     text = (
         "📢 <b>Add Required Channel</b>\n\n"
         "Send the channel's <b>@username</b> or numeric ID (e.g. <code>-1001234567890</code>):\n"
-        "<code>@MyMusicChannel</code>\n\n"
+        "<code>@MyChannel</code>\n\n"
         "💡 <i>Tip: Make sure the bot is already an Administrator in the channel. The bot will automatically fetch the channel's title and invite link!</i>"
     )
     if callback.message:
@@ -921,7 +897,7 @@ async def callback_adm_wl_add(callback: CallbackQuery, state: FSMContext, settin
     text = (
         "⭐ <b>Add User to Whitelist</b>\n\n"
         "Send the Telegram user ID followed by a title/name for this user:\n"
-        "<code>123456789 Alex (VIP Producer)</code>\n\n"
+        "<code>123456789 Alex (VIP User)</code>\n\n"
         "💡 <i>The title will be shown on the menu buttons so you can easily recognize them. "
         "If you only send the ID, we will try to fetch their Telegram name automatically!</i>"
     )
@@ -1466,7 +1442,7 @@ async def callback_adm_set_local_url(
         "Send the new HTTP/HTTPS URL below (or /cancel):"
     )
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=get_admin_back_keyboard(), parse_mode="HTML")
+        await callback.message.edit_text(text, reply_markup=get_admin_back_keyboard("adm_settings"), parse_mode="HTML")
     await callback.answer()
 
 
@@ -1586,7 +1562,7 @@ async def callback_adm_set_size_custom(
 
     text = f"✏️ <b>Enter Custom Max {setting_type.title()} Size in MB</b> (1 - 2000):"
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=get_admin_back_keyboard(), parse_mode="HTML")
+        await callback.message.edit_text(text, reply_markup=get_admin_back_keyboard("adm_settings"), parse_mode="HTML")
     await callback.answer()
 
 
@@ -1670,15 +1646,15 @@ async def callback_adm_set_toggle(
         return
     toggle_type = callback.data.split(":", 1)[1]
     if toggle_type == "tech":
-        settings.show_technical_info = not settings.show_technical_info
+        settings.show_technical_info = not getattr(settings, "show_technical_info", True)
         new_val = settings.show_technical_info
         await repository.set_system_setting("show_technical_info", "1" if new_val else "0")
-        label = "Technical Specs in Preview"
+        label = "Image Inspection Details"
     elif toggle_type == "cover":
-        settings.send_cover_separately = not settings.send_cover_separately
+        settings.send_cover_separately = not getattr(settings, "send_cover_separately", True)
         new_val = settings.send_cover_separately
         await repository.set_system_setting("send_cover_separately", "1" if new_val else "0")
-        label = "Send Cover Separately"
+        label = "Preview Photo Delivery"
     else:
         await callback.answer()
         return

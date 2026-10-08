@@ -1,4 +1,4 @@
-"""Command-line administrative interface for SongTaggerBot."""
+"""Command-line administrative interface for ConvertPixBot."""
 
 import argparse
 import asyncio
@@ -149,7 +149,7 @@ async def cmd_backup(repo: DatabaseRepository, settings):
 async def cmd_audit(repo: DatabaseRepository, limit: int = 20):
     logs, total = await repo.get_audit_logs(limit=limit, offset=0)
     print("=" * 65)
-    print(f"       SongTaggerBot Audit Logs (Showing {len(logs)} of {total})")
+    print(f"       ConvertPixBot Audit Logs (Showing {len(logs)} of {total})")
     print("=" * 65)
     for log in logs:
         target_str = f" -> {log.target}" if log.target else ""
@@ -162,14 +162,11 @@ async def cmd_audit(repo: DatabaseRepository, limit: int = 20):
 async def cmd_stats(repo: DatabaseRepository):
     stats = await repo.get_stats()
     print("=" * 45)
-    print("       SongTaggerBot Statistics")
+    print("       ConvertPixBot Statistics")
     print("=" * 45)
     print(f"Files Received:        {stats.files_received}")
     print(f"Files Processed:       {stats.files_processed}")
     print(f"Files Failed:          {stats.files_failed}")
-    print(f"Cuts Performed:        {stats.cuts_performed}")
-    print(f"Covers Updated:        {stats.covers_updated}")
-    print(f"Lyrics Updated:        {stats.lyrics_updated}")
     print(f"Unique Active Users:   {stats.unique_users}")
     print(f"Total Processed:       {stats.total_processed_mb} MB")
     print("=" * 45)
@@ -281,15 +278,15 @@ async def cmd_settings_list(repo: DatabaseRepository, settings):
     eff_cover = db_cover if db_cover != "" else str(settings.send_cover_separately)
 
     print("=" * 60)
-    print("SongTaggerBot Active Settings:")
+    print("ConvertPixBot Active Settings:")
     print("-" * 60)
     print(f"API Server Mode:       {eff_mode.upper()} ({eff_url})")
     print(f"Max Input File Size:   {eff_in} MB")
     print(f"Max Output File Size:  {eff_out} MB")
     print(f"Rate Limit:            {settings.rate_limit_uploads_per_minute} uploads/min")
     print(f"Concurrency:           {settings.max_user_concurrent_jobs}/user | {settings.max_global_concurrent_jobs} global")
-    print(f"Technical Specs:       {'ON' if eff_tech in ('1', 'True', 'true') else 'OFF'}")
-    print(f"Send Cover Separately: {'ON' if eff_cover in ('1', 'True', 'true') else 'OFF'}")
+    print(f"Image Inspection:      {'ON' if eff_tech in ('1', 'True', 'true') else 'OFF'}")
+    print(f"Preview Photo:         {'ON' if eff_cover in ('1', 'True', 'true') else 'OFF'}")
     print("=" * 60)
 
 
@@ -300,7 +297,7 @@ async def async_main():
 
     parser = argparse.ArgumentParser(
         prog="cli",
-        description="SongTaggerBot Administrative CLI",
+        description="ConvertPixBot Administrative CLI",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
