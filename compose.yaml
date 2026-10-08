@@ -3,11 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: image-converter-bot
+    container_name: convert-pix-bot
     restart: unless-stopped
     environment:
       BOT_TOKEN: ${BOT_TOKEN}
-      BOT_NAME: ${BOT_NAME:-ImageConverterBot}
+      BOT_NAME: ${BOT_NAME:-ConvertPixBot}
       ADMIN_IDS: ${ADMIN_IDS:-}
       TELEGRAM_API_MODE: ${TELEGRAM_API_MODE:-local}
       TELEGRAM_API_BASE_URL: ${TELEGRAM_API_BASE_URL:-http://telegram-bot-api:8081}

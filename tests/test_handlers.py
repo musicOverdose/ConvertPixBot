@@ -1,4 +1,4 @@
-"""Integration and handler tests for image converter bot."""
+"""Integration and handler tests for Convert Pix Bot."""
 
 import asyncio
 from pathlib import Path

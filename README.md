@@ -1,4 +1,4 @@
-# Telegram Image Converter Bot
+# Convert Pix Bot
 
 A fast, lightweight, and reliable Telegram bot that converts images and **static Telegram stickers** into standard image formats and single-page PDFs.
 
@@ -37,7 +37,7 @@ Built with Python 3.13, aiogram 3, Pillow, and `pillow-heif`, integrated with lo
 1. Open **Portainer** on your server.
 2. Go to **Stacks** → **Add stack**.
 3. Select **Repository**:
-   - **Repository URL**: `https://github.com/musicOverdose/image-converter-bot`
+   - **Repository URL**: `https://github.com/musicOverdose/convert-pix-bot`
    - **Repository reference**: `refs/heads/main`
    - **Compose path**: `compose.yaml` (or `docker-compose.yml`)
 4. Add **Environment Variables**:
@@ -45,7 +45,7 @@ Built with Python 3.13, aiogram 3, Pillow, and `pillow-heif`, integrated with lo
    |---|---|
    | `BOT_TOKEN` | `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ` *(Required)* |
    | `ADMIN_IDS` | `12345678,87654321` *(Your Telegram user ID)* |
-   | `BOT_NAME` | `ImageConverterBot` |
+   | `BOT_NAME` | `ConvertPixBot` |
    | `TELEGRAM_API_MODE` | `local` (or `cloud`) |
    | `TELEGRAM_API_BASE_URL` | `http://telegram-bot-api:8081` (or `https://api.telegram.org`) |
    | `MAX_INPUT_MB` | `50` |
@@ -57,8 +57,8 @@ Built with Python 3.13, aiogram 3, Pillow, and `pillow-heif`, integrated with lo
 ## Deploying via Docker Compose (CLI)
 
 ```bash
-git clone https://github.com/musicOverdose/image-converter-bot.git
-cd image-converter-bot
+git clone https://github.com/musicOverdose/convert-pix-bot.git
+cd convert-pix-bot
 
 # Configure environment
 cp .env.example .env
