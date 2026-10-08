@@ -66,13 +66,13 @@ async def handle_media_upload(
         is_sticker = True
         file_id = sticker.file_id
         file_size = sticker.file_size or 0
-        file_name = f'sticker_{sticker.file_unique_id}.webp'
+        file_name = 'sticker.webp'
 
     elif message.photo:
         photo = message.photo[-1]
         file_id = photo.file_id
         file_size = photo.file_size or 0
-        file_name = f'photo_{photo.file_unique_id}.jpg'
+        file_name = 'image.jpg'
 
     else:
         doc = message.document
@@ -80,8 +80,8 @@ async def handle_media_upload(
             return
         file_id = doc.file_id
         file_size = doc.file_size or 0
-        raw_name = doc.file_name or f'doc_{doc.file_unique_id}.png'
-        file_name = sanitize_filename(raw_name, fallback=f'doc_{doc.file_unique_id}.png')
+        raw_name = doc.file_name or 'image.png'
+        file_name = sanitize_filename(raw_name, fallback='image.png')
 
     # Check size limits
     if file_size > settings.max_input_bytes:
@@ -226,6 +226,11 @@ async def callback_convert_format(
         current_job.status = 'processing'
         try:
             orig_stem = Path(current_job.original_filename).stem
+            # Clean up long auto-generated camera/document names (e.g. photo_xyz, doc_xyz)
+            if orig_stem.lower().startswith(('photo_', 'doc_', 'file_')) and len(orig_stem) > 10:
+                orig_stem = 'image'
+            elif orig_stem.lower().startswith('sticker_') and len(orig_stem) > 10:
+                orig_stem = 'sticker'
             out_ext = target_fmt.lower()
             output_filename = f'{orig_stem}.{out_ext}'
             output_path = current_job.workspace_dir / f'out_{current_job.uuid[:8]}.{out_ext}'
@@ -243,18 +248,18 @@ async def callback_convert_format(
             if current_job.status == 'cancelled':
                 return
 
-            # 3. Generate preview (from output_path for images, or original_path for PDF)
+            # 3. Generate preview (only for image outputs, skipped for PDF)
             preview_path = current_job.workspace_dir / f'preview_{current_job.uuid[:8]}.jpg'
-            preview_source = current_job.original_path if target_fmt.lower() == 'pdf' else output_path
             has_preview = False
-            try:
-                await MediaProcessor.generate_preview(
-                    source_path=preview_source,
-                    preview_path=preview_path,
-                )
-                has_preview = preview_path.exists() and preview_path.stat().st_size > 0
-            except Exception as prev_err:
-                logger.warning(f'Preview generation skipped for job {job_uuid}: {prev_err}')
+            if target_fmt.lower() != 'pdf':
+                try:
+                    await MediaProcessor.generate_preview(
+                        source_path=output_path,
+                        preview_path=preview_path,
+                    )
+                    has_preview = preview_path.exists() and preview_path.stat().st_size > 0
+                except Exception as prev_err:
+                    logger.warning(f'Preview generation skipped for job {job_uuid}: {prev_err}')
 
             if current_job.status == 'cancelled':
                 return
@@ -281,11 +286,11 @@ async def callback_convert_format(
                 in_size_bytes=in_bytes,
             )
 
-            # 5. Deliver result: Visual Preview first (convenience only)
-            if has_preview:
+            # 5. Deliver result: Visual Preview with caption for image formats (convenience only, skipped for PDF)
+            if has_preview and target_fmt.lower() != 'pdf':
                 try:
                     preview_file = FSInputFile(path=str(preview_path), filename='preview.jpg')
-                    await bot.send_photo(chat_id=chat_id, photo=preview_file)
+                    await bot.send_photo(chat_id=chat_id, photo=preview_file, caption=caption)
                 except Exception as e:
                     logger.warning(f'Could not send visual preview for job {job_uuid}: {e}')
 
@@ -298,6 +303,7 @@ async def callback_convert_format(
                 chat_id=chat_id,
                 document=doc_file,
                 caption=caption,
+                disable_content_type_detection=True,
             )
 
             current_job.status = 'completed'

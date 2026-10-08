@@ -6,7 +6,6 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.keyboards.main_menu import get_start_keyboard
 from app.bot.keyboards.must_join_menu import get_must_join_keyboard
 from app.services.job_manager import JobManager
 from app.services.message_service import MessageService, DEFAULT_WELCOME_MESSAGE, DEFAULT_HELP_MESSAGE
@@ -26,7 +25,7 @@ async def cmd_start(
         welcome_text = await message_service.get_welcome_message(message.from_user)
     else:
         welcome_text = MessageService.render_template(DEFAULT_WELCOME_MESSAGE, message.from_user)
-    await message.answer(welcome_text, parse_mode='HTML', reply_markup=get_start_keyboard())
+    await message.answer(welcome_text, parse_mode='HTML')
 
 
 @router.message(Command('help'))
@@ -72,7 +71,7 @@ async def callback_must_join_verify(
         text = "✅ <b>Membership Verified!</b>\n\n" + welcome_text
 
         if callback.message:
-            await callback.message.edit_text(text, parse_mode='HTML', reply_markup=get_start_keyboard())
+            await callback.message.edit_text(text, parse_mode='HTML')
     else:
         await callback.answer('⚠️ You have not joined all required channels yet.', show_alert=True)
         if callback.message:

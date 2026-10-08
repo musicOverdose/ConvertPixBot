@@ -363,16 +363,91 @@ async def test_conversion_worker_execution_and_delivery(
                 break
             await asyncio.sleep(0.1)
 
-        # Verify preview was sent
+        # Verify preview was sent with caption
         mock_bot.send_photo.assert_called_once()
-        # Verify document was sent
+        photo_kwargs = mock_bot.send_photo.call_args[1]
+        assert "Converted to WEBP" in photo_kwargs["caption"]
+
+        # Verify document was sent with disable_content_type_detection
         mock_bot.send_document.assert_called_once()
         doc_kwargs = mock_bot.send_document.call_args[1]
         assert "Converted to WEBP" in doc_kwargs["caption"]
         assert doc_kwargs["document"].filename == "my_photo.webp"
+        assert doc_kwargs.get("disable_content_type_detection") is True
 
         # Verify cleanup of temporary workspace
         assert not workspace_dir.exists()
 
     finally:
         await queue_mgr.stop()
+
+
+@pytest.mark.asyncio
+async def test_pdf_conversion_delivery_has_no_preview_photo(
+    sample_png: Path,
+    test_job_manager: JobManager,
+    test_settings: Settings,
+):
+    job = test_job_manager.create_job(user_id=1001, original_filename="image.jpg")
+    job.original_path.write_bytes(sample_png.read_bytes())
+    job.metadata["inspection"] = {"width": 200, "height": 200}
+    job.status = "ready"
+    job_uuid = job.uuid
+
+    queue_mgr = QueueManager(max_concurrent_jobs=1)
+    queue_mgr.start()
+
+    mock_bot = MagicMock()
+    mock_bot.send_photo = AsyncMock()
+    mock_bot.send_document = AsyncMock()
+    mock_bot.delete_message = AsyncMock()
+
+    cb = MagicMock()
+    cb.data = f"conv:{job_uuid}:pdf"
+    cb.from_user.id = 1001
+    cb.bot = mock_bot
+    cb.message = MagicMock()
+    cb.message.message_id = 42
+    cb.message.chat.id = 1001
+    cb.message.edit_text = AsyncMock()
+    cb.answer = AsyncMock()
+
+    try:
+        await callback_convert_format(
+            callback=cb,
+            settings=test_settings,
+            job_manager=test_job_manager,
+            queue_manager=queue_mgr,
+        )
+
+        for _ in range(50):
+            if test_job_manager.get_job(job_uuid) is None:
+                break
+            await asyncio.sleep(0.1)
+
+        # PDF output MUST NOT send a preview photo
+        mock_bot.send_photo.assert_not_called()
+
+        # PDF output MUST send document directly with clean filename
+        mock_bot.send_document.assert_called_once()
+        doc_kwargs = mock_bot.send_document.call_args[1]
+        assert doc_kwargs["document"].filename == "image.pdf"
+        assert "Converted to PDF" in doc_kwargs["caption"]
+
+    finally:
+        await queue_mgr.stop()
+
+
+@pytest.mark.asyncio
+async def test_cmd_start_has_no_buttons(fsm_ctx):
+    from app.bot.handlers.common import cmd_start
+    msg = MagicMock()
+    msg.from_user.id = 1234
+    msg.from_user.first_name = "Farzad"
+    msg.answer = AsyncMock()
+
+    await cmd_start(message=msg, state=fsm_ctx)
+    msg.answer.assert_called_once()
+    # Ensure no reply_markup was provided
+    call_kwargs = msg.answer.call_args[1]
+    assert call_kwargs.get("reply_markup") is None
