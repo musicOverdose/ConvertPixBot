@@ -82,7 +82,13 @@ class FileAcquisitionService:
         raw_path = file_info.file_path
 
         if self.settings.is_local_mode:
-            return self._acquire_local_file(raw_path, destination)
+            try:
+                return self._acquire_local_file(raw_path, destination)
+            except (LocalFileAccessError, PermissionError) as e:
+                logger.warning(
+                    f"Local file acquisition failed ({e}); falling back to HTTP download..."
+                )
+                return await self._acquire_cloud_file(bot, raw_path, destination)
         else:
             return await self._acquire_cloud_file(bot, raw_path, destination)
 

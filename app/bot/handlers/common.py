@@ -46,6 +46,7 @@ async def cmd_cancel(message: Message, state: FSMContext, job_manager: JobManage
     await state.clear()
     user_job = job_manager.get_user_active_job(message.from_user.id)
     if user_job:
+        user_job.status = 'cancelled'
         job_manager.cleanup_job(user_job.uuid)
         await message.answer('❌ Active session cancelled. Temporary files deleted.')
     else:

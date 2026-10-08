@@ -34,9 +34,11 @@ venv.bak/
 # Project directories
 data/
 /data/
+*.db
 tmp/
 temp/
 /tmp/audio-bot/
+/tmp/bot-app/
 
 # Testing & Coverage
 .pytest_cache/

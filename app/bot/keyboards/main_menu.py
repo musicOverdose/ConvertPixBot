@@ -15,12 +15,17 @@ def get_start_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_format_selection_keyboard(job_uuid: str) -> InlineKeyboardMarkup:
-    """Example conversion format selection buttons."""
+    """Format selection inline keyboard for static image conversion."""
     buttons = [
         [
             InlineKeyboardButton(text='🖼 PNG', callback_data=f'conv:{job_uuid}:png'),
-            InlineKeyboardButton(text='📸 JPEG', callback_data=f'conv:{job_uuid}:jpeg'),
+            InlineKeyboardButton(text='📸 JPG', callback_data=f'conv:{job_uuid}:jpg'),
             InlineKeyboardButton(text='🌐 WEBP', callback_data=f'conv:{job_uuid}:webp'),
+        ],
+        [
+            InlineKeyboardButton(text='📄 PDF', callback_data=f'conv:{job_uuid}:pdf'),
+            InlineKeyboardButton(text='🔲 ICO', callback_data=f'conv:{job_uuid}:ico'),
+            InlineKeyboardButton(text='🎨 BMP', callback_data=f'conv:{job_uuid}:bmp'),
         ],
         [
             InlineKeyboardButton(text='❌ Cancel', callback_data=f'conv:{job_uuid}:cancel'),

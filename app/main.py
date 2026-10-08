@@ -135,9 +135,10 @@ async def main():
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         cleanup_task.cancel()
-        queue_manager.stop()
-        await bot.session.close()
-        await db.disconnect()
+        await queue_manager.stop()
+        if bot.session:
+            await bot.session.close()
+        await db.close()
         logger.info('Bot stopped gracefully.')
 
 

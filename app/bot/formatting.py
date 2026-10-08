@@ -1,7 +1,101 @@
-"""Telegram message text formatters for metadata and technical info."""
+"""Telegram message text formatters for metadata, technical info, and image details."""
 
-from typing import Optional
-from app.audio.models import AudioMetadata, AudioTechnicalInfo
+import re
+from pathlib import Path
+from typing import Any, Optional
+
+try:
+    from app.audio.models import AudioMetadata, AudioTechnicalInfo
+except ImportError:
+    AudioMetadata = Any  # type: ignore
+    AudioTechnicalInfo = Any  # type: ignore
+
+
+def format_file_size(size_bytes: int) -> str:
+    """Formats file size in bytes to human-readable string (B, KB, MB)."""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        val = size_bytes / 1024
+        val_str = f"{val:.1f}".rstrip("0").rstrip(".")
+        return f"{val_str} KB"
+    else:
+        val = size_bytes / (1024 * 1024)
+        val_str = f"{val:.1f}".rstrip("0").rstrip(".")
+        return f"{val_str} MB"
+
+
+def format_image_details(
+    filename: str,
+    format_name: str,
+    width: int,
+    height: int,
+    file_size_bytes: int,
+    color_mode: str,
+    is_sticker: bool = False,
+) -> str:
+    """
+    Formats image inspection information as specified:
+    🖼 Image Details
+    • Name: photo_2026.png
+    • Source: Telegram Sticker (if static sticker)
+    • Format: PNG
+    • Resolution: 1920×1080
+    • Size: 2.4 MB
+    • Color: RGBA
+
+    Select target format to convert:
+    """
+    lines = [
+        "🖼 <b>Image Details</b>",
+        f"• Name: {filename}",
+    ]
+    if is_sticker:
+        lines.append("• Source: Telegram Sticker")
+    lines.extend([
+        f"• Format: {format_name.upper()}",
+        f"• Resolution: {width}×{height}",
+        f"• Size: {format_file_size(file_size_bytes)}",
+        f"• Color: {color_mode}",
+        "",
+        "Select target format to convert:",
+    ])
+    return "\n".join(lines)
+
+
+def format_conversion_caption(
+    target_format: str,
+    width: int,
+    height: int,
+    out_size_bytes: int,
+    in_size_bytes: int,
+) -> str:
+    """
+    Formats the output caption:
+    ✅ Converted to WEBP • 1920×1080 • 420 KB (saved 82%)
+    or
+    ✅ Converted to PNG • 1920×1080 • 2.8 MB (+400 KB)
+    """
+    fmt_upper = target_format.upper()
+    size_str = format_file_size(out_size_bytes)
+    res_str = f"{width}×{height}"
+
+    if out_size_bytes < in_size_bytes and in_size_bytes > 0:
+        saved_pct = round((1 - (out_size_bytes / in_size_bytes)) * 100)
+        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str} (saved {saved_pct}%)"
+    elif out_size_bytes > in_size_bytes and in_size_bytes > 0:
+        diff_str = format_file_size(out_size_bytes - in_size_bytes)
+        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str} (+{diff_str})"
+    else:
+        return f"✅ Converted to {fmt_upper} • {res_str} • {size_str}"
+
+
+def sanitize_filename(filename: str, fallback: str = "image.png") -> str:
+    """Sanitizes filename, preventing path traversal and unsafe characters."""
+    name = Path(filename).name.strip()
+    name = re.sub(r"[^\w\s\.-]", "_", name)
+    name = name.lstrip(".")
+    return name if name else fallback
 
 
 def val_or_dash(val: Optional[str]) -> str:
