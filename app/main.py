@@ -11,7 +11,7 @@ from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from app.bot.handlers import admin_handlers, common, job_handler
+from app.bot.handlers import admin_handlers, common, job_handler, chat_member_handlers
 from app.bot.middleware.must_join_middleware import MustJoinMiddleware
 from app.config import get_settings
 from app.database.connection import Database
@@ -20,6 +20,7 @@ from app.services.broadcast_service import BroadcastService
 from app.services.file_acquisition import FileAcquisitionService
 from app.services.job_manager import JobManager
 from app.services.message_service import MessageService
+from app.services.must_join_redis import MustJoinRedisClient
 from app.services.must_join_service import MustJoinService
 from app.services.queue_manager import QueueManager
 from app.services.rate_limiter import RateLimiter
@@ -86,7 +87,14 @@ async def main():
     queue_manager = QueueManager(max_concurrent_jobs=settings.max_concurrent_jobs)
     queue_manager.start()
 
-    must_join_service = MustJoinService(repository)
+    # Redis Connection for Shared Event-Driven Must-Join
+    redis_client = MustJoinRedisClient(
+        redis_url=settings.redis_url,
+        bot_prefix=settings.bot_prefix,
+    )
+    await redis_client.connect()
+
+    must_join_service = MustJoinService(repository, redis_client=redis_client)
     message_service = MessageService(repository)
     file_acquisition = FileAcquisitionService(settings)
     rate_limiter = RateLimiter(
@@ -124,6 +132,7 @@ async def main():
     dp['job_manager'] = job_manager
     dp['queue_manager'] = queue_manager
     dp['must_join_service'] = must_join_service
+    dp['redis_client'] = redis_client
     dp['message_service'] = message_service
     dp['file_acquisition'] = file_acquisition
     dp['rate_limiter'] = rate_limiter
@@ -135,6 +144,7 @@ async def main():
 
     # Routers
     dp.include_router(common.router)
+    dp.include_router(chat_member_handlers.router)
     dp.include_router(admin_handlers.router)
     dp.include_router(job_handler.router)
 
@@ -142,12 +152,16 @@ async def main():
 
     try:
         logger.info('Starting bot polling...')
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(
+            bot,
+            allowed_updates=["message", "callback_query", "chat_member", "my_chat_member"],
+        )
     finally:
         cleanup_task.cancel()
         await queue_manager.stop()
         if bot.session:
             await bot.session.close()
+        await redis_client.close()
         await db.close()
         logger.info('Bot stopped gracefully.')
 

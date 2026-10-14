@@ -56,7 +56,10 @@ class MustJoinMiddleware(BaseMiddleware):
         if await repo.is_whitelisted(user.id):
             return await handler(event, data)
 
-        # Allow must_join_verify callback to be processed by its handler
+        # Register interacting user as known for write-amplification protection
+        await self.must_join_service.mark_user_known(user.id)
+
+        # Allow must_join_verify callback to be processed by its handler (if any legacy clients send it)
         if isinstance(event, CallbackQuery) and event.data == "must_join_verify":
             return await handler(event, data)
 
@@ -72,12 +75,23 @@ class MustJoinMiddleware(BaseMiddleware):
             else:
                 from app.services.message_service import DEFAULT_MUST_JOIN_MESSAGE, MessageService as MS
                 text = MS.render_template(DEFAULT_MUST_JOIN_MESSAGE, user)
+
+            prompt_msg = None
             if isinstance(event, Message):
-                await event.reply(text, reply_markup=kb, parse_mode="HTML")
+                prompt_msg = await event.reply(text, reply_markup=kb, parse_mode="HTML")
             elif isinstance(event, CallbackQuery):
                 await event.answer("Please join the required channels first.", show_alert=True)
                 if event.message:
                     await event.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+                    prompt_msg = event.message
+
+            if prompt_msg and getattr(prompt_msg, "chat", None):
+                await self.must_join_service.save_prompt_message(
+                    user_id=user.id,
+                    chat_id=prompt_msg.chat.id,
+                    message_id=prompt_msg.message_id,
+                )
+
             return None
 
         return await handler(event, data)

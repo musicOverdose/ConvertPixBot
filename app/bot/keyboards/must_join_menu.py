@@ -21,5 +21,4 @@ def get_must_join_keyboard(missing_channels: List[RequiredChannel]) -> InlineKey
                     url = "https://t.me/"
         buttons.append([InlineKeyboardButton(text=f"📢 {name}", url=url)])
 
-    buttons.append([InlineKeyboardButton(text="🔄 I've joined", callback_data="must_join_verify")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

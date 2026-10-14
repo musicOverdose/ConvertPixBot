@@ -22,6 +22,7 @@ services:
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
       DATA_DIR: ${DATA_DIR:-/data}
       TEMP_DIR: ${TEMP_DIR:-/tmp/bot-app}
+      REDIS_URL: ${REDIS_URL:-redis://telegram-redis:6379/1}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ./data:/data

@@ -89,6 +89,16 @@ class Settings(BaseSettings):
         description='Send visual preview photo for image formats',
     )
 
+    # Redis configuration for Event-Driven Must-Join
+    redis_url: str = Field(
+        default='redis://telegram-redis:6379/1',
+        description='Redis URL for shared must-join caching and state',
+    )
+    bot_prefix: str = Field(
+        default='convertpix',
+        description='Prefix for Redis keys',
+    )
+
     @property
     def is_local_mode(self) -> bool:
         return self.telegram_api_mode.lower().strip() == 'local'
